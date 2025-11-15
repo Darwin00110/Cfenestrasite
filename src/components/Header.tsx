@@ -14,7 +14,7 @@ import {
 
 export function Header() {
   const [isDark, setIsDark] = useState(false);
-  const [user, setUser] = useState<{ email: string; name: string } | null>(null);
+  const [user, setUser] = useState<{ email: string; name: string; picture?: string } | null>(null);
 
   useEffect(() => {
     // Check localStorage or system preference
@@ -65,8 +65,8 @@ export function Header() {
       .slice(0, 2);
   };
 
-  // Generate avatar URL using UI Avatars service (similar to Google profile pics)
-  const getAvatarUrl = (name: string, email: string) => {
+  // Generate avatar URL using UI Avatars service (fallback if no Google picture)
+  const getAvatarUrl = (name: string) => {
     const encodedName = encodeURIComponent(name);
     return `https://ui-avatars.com/api/?name=${encodedName}&background=random&color=fff&size=128&bold=true`;
   };
@@ -103,7 +103,10 @@ export function Header() {
                 <DropdownMenuTrigger asChild>
                   <button className="focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full">
                     <Avatar className="w-10 h-10 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all">
-                      <AvatarImage src={getAvatarUrl(user.name, user.email)} alt={user.name} />
+                      <AvatarImage 
+                        src={user.picture || getAvatarUrl(user.name)} 
+                        alt={user.name} 
+                      />
                       <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
                         {getInitials(user.name)}
                       </AvatarFallback>
@@ -114,7 +117,10 @@ export function Header() {
                   <DropdownMenuLabel>
                     <div className="flex items-center gap-3">
                       <Avatar className="w-12 h-12">
-                        <AvatarImage src={getAvatarUrl(user.name, user.email)} alt={user.name} />
+                        <AvatarImage 
+                          src={user.picture || getAvatarUrl(user.name)} 
+                          alt={user.name} 
+                        />
                         <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
                           {getInitials(user.name)}
                         </AvatarFallback>

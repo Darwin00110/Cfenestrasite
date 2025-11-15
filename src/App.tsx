@@ -5,10 +5,17 @@ import { CleanupOptions } from './components/CleanupOptions';
 import { Footer } from './components/Footer';
 import { AuthPanel } from './components/AuthPanel';
 import { LandingPage } from './components/LandingPage';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
+// Google OAuth Client ID Configuration
+// Leave empty to disable Google Sign-In (app will work with email/password only)
+// To enable Google Sign-In, replace with your Client ID from: https://console.cloud.google.com/apis/credentials
+// Example: '123456789-abc123.apps.googleusercontent.com'
+const GOOGLE_CLIENT_ID = '';
 
 export default function App() {
   const [showLanding, setShowLanding] = useState(true);
-  const [user, setUser] = useState<{ email: string; name: string } | null>(null);
+  const [user, setUser] = useState<{ email: string; name: string; picture?: string } | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [isCleaning, setIsCleaning] = useState(false);
   const [totalScans, setTotalScans] = useState(0);
@@ -63,10 +70,10 @@ export default function App() {
     }, 2500);
   };
 
-  const handleLogin = (email: string, name: string) => {
-    setUser({ email, name });
+  const handleLogin = (email: string, name: string, picture?: string) => {
+    setUser({ email, name, picture });
     // Save to localStorage for persistence
-    localStorage.setItem('cfenestra_user', JSON.stringify({ email, name }));
+    localStorage.setItem('cfenestra_user', JSON.stringify({ email, name, picture }));
   };
 
   // Check for saved user on mount
@@ -92,9 +99,22 @@ export default function App() {
     }} />;
   }
 
+  // Check if Google Client ID is configured
+  const isGoogleConfigured = GOOGLE_CLIENT_ID && 
+    GOOGLE_CLIENT_ID.length > 0 && 
+    GOOGLE_CLIENT_ID.includes('.apps.googleusercontent.com');
+
   // Show auth panel if not logged in
   if (!user) {
-    return <AuthPanel onLogin={handleLogin} />;
+    if (isGoogleConfigured) {
+      return (
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+          <AuthPanel onLogin={handleLogin} googleEnabled={true} />
+        </GoogleOAuthProvider>
+      );
+    } else {
+      return <AuthPanel onLogin={handleLogin} googleEnabled={false} />;
+    }
   }
 
   return (
