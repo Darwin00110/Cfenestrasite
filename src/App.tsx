@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { Header } from './components/Header';
-import { Dashboard } from './components/Dashboard';
-import { CleanupOptions } from './components/CleanupOptions';
-import { Footer } from './components/Footer';
-import { AuthPanel } from './components/AuthPanel';
-import { LandingPage } from './components/LandingPage';
+import { LoadingScreen } from './components/LoadingScreen';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+
+// Lazy load components for better performance
+const Dashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
+const CleanupOptions = lazy(() => import('./components/CleanupOptions').then(module => ({ default: module.CleanupOptions })));
+const Footer = lazy(() => import('./components/Footer').then(module => ({ default: module.Footer })));
+const AuthPanel = lazy(() => import('./components/AuthPanel').then(module => ({ default: module.AuthPanel })));
+const LandingPage = lazy(() => import('./components/LandingPage').then(module => ({ default: module.LandingPage })));
 
 // Google OAuth Client ID Configuration
 // Leave empty to disable Google Sign-In (app will work with email/password only)
@@ -93,10 +96,14 @@ export default function App() {
 
   // Show landing page first
   if (showLanding) {
-    return <LandingPage onGetStarted={() => {
-      setShowLanding(false);
-      localStorage.setItem('cfenestra_seen_landing', 'true');
-    }} />;
+    return (
+      <Suspense fallback={<LoadingScreen />}>
+        <LandingPage onGetStarted={() => {
+          setShowLanding(false);
+          localStorage.setItem('cfenestra_seen_landing', 'true');
+        }} />
+      </Suspense>
+    );
   }
 
   // Check if Google Client ID is configured
@@ -109,11 +116,17 @@ export default function App() {
     if (isGoogleConfigured) {
       return (
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-          <AuthPanel onLogin={handleLogin} googleEnabled={true} />
+          <Suspense fallback={<LoadingScreen />}>
+            <AuthPanel onLogin={handleLogin} googleEnabled={true} />
+          </Suspense>
         </GoogleOAuthProvider>
       );
     } else {
-      return <AuthPanel onLogin={handleLogin} googleEnabled={false} />;
+      return (
+        <Suspense fallback={<LoadingScreen />}>
+          <AuthPanel onLogin={handleLogin} googleEnabled={false} />
+        </Suspense>
+      );
     }
   }
 
@@ -121,23 +134,25 @@ export default function App() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
       <Header />
       
-      <main className="container mx-auto px-4 py-8 max-w-7xl">
-        <Dashboard
-          totalFiles={totalFiles}
-          estimatedSize={estimatedSize}
-          freedSpace={freedSpace}
-          isScanning={isScanning}
-          onScan={handleScan}
-        />
+      <Suspense fallback={<LoadingScreen />}>
+        <main className="container mx-auto px-4 py-8 max-w-7xl">
+          <Dashboard
+            totalFiles={totalFiles}
+            estimatedSize={estimatedSize}
+            freedSpace={freedSpace}
+            isScanning={isScanning}
+            onScan={handleScan}
+          />
 
-        <CleanupOptions
-          cleanupData={cleanupData}
-          isCleaning={isCleaning}
-          onCleanup={handleCleanup}
-        />
-      </main>
+          <CleanupOptions
+            cleanupData={cleanupData}
+            isCleaning={isCleaning}
+            onCleanup={handleCleanup}
+          />
+        </main>
 
-      <Footer />
+        <Footer />
+      </Suspense>
     </div>
   );
 }
